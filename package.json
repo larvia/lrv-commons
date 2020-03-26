@@ -1,0 +1,10 @@
+{
+  "name": "lrv-commons",
+  "version": "1.0.0",
+  "description": "Common functions for the LARVIA API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  }
+}
