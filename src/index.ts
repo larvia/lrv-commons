@@ -1,2 +1,1 @@
-export { getHigherRole } from './commons'
-export { rolesNames as roles } from "./data/roles"
+export { getHigherRole, roles } from "./commons";
