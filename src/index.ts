@@ -1,1 +1,1 @@
-export { getHigherRole, roles, languages } from "./commons";
+export { getHigherRole, roles, languages, analysisTypes } from "./commons";

@@ -24,3 +24,8 @@ export const languages = {
   ES : 'Español',
   EN : 'English'
 }
+
+
+export const analysisTypes = [
+  'GENERAL_LARVAE_ANALYSIS'
+  ]
