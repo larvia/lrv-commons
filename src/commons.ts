@@ -29,3 +29,7 @@ export const languages = {
 export const analysisTypes = [
   'GENERAL_LARVAE_ANALYSIS'
   ]
+
+export const larvaeSpecies = [
+  'LITOPENAEUS_VANNAMEI'
+]
