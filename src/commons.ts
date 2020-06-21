@@ -19,3 +19,17 @@ export function getHigherRole(userRoles: Array<String>) {
   const higherRoleIndex = Object.values(rolesScore).indexOf(higherRoleScore);
   return Object.keys(rolesScore)[higherRoleIndex];
 }
+
+export const languages = {
+  ES : 'Español',
+  EN : 'English'
+}
+
+
+export const analysisTypes = [
+  'GENERAL_LARVAE_ANALYSIS'
+  ]
+
+export const larvaeSpecies = [
+  'LITOPENAEUS_VANNAMEI'
+]
