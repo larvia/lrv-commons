@@ -5,6 +5,7 @@ export const roles = {
   CLIENT_MANAGER: 'CLIENT_MANAGER',
   CLIENT_OPERATOR: 'CLIENT_OPERATOR',
   FINANCE: 'FINANCE',
+  TRADING: 'TRADING',
 };
 
 export function getHigherRole(userRoles: Array<String>) {
