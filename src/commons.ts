@@ -10,12 +10,13 @@ export const roles = {
 
 export function getHigherRole(userRoles: Array<String>) {
   const rolesScore = {
-    [roles.SUPER_ADMIN]: 6,
-    [roles.SALES]: 5,
-    [roles.CLIENT_OWNER]: 4,
-    [roles.CLIENT_MANAGER]: 3,
-    [roles.CLIENT_OPERATOR]: 2,
-    [roles.FINANCE]: 1,
+    [roles.SUPER_ADMIN]: 7,
+    [roles.SALES]: 6,
+    [roles.CLIENT_OWNER]: 5,
+    [roles.CLIENT_MANAGER]: 4,
+    [roles.CLIENT_OPERATOR]: 3,
+    [roles.FINANCE]: 2,
+    [roles.TRADING]: 1,
   };
   const scores = userRoles.map((r: any) => rolesScore[r]);
   const higherRoleScore = Math.max(...scores);
