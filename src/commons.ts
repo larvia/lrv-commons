@@ -1,3 +1,6 @@
+import * as jwt from 'jsonwebtoken';
+import { PayloadToken } from './interfaces';
+
 export const roles = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   SALES: 'SALES',
@@ -24,11 +27,21 @@ export function getHigherRole(userRoles: Array<String>) {
   return Object.keys(rolesScore)[higherRoleIndex];
 }
 
+export function getRoles() {
+  const accessToken = localStorage.getItem('accessToken');
+  const payloadToken = jwt.decode(accessToken || '') as PayloadToken;
+  return payloadToken ? payloadToken.roles : [];
+}
+
+export function getMainRole() {
+  const userRoles = getRoles();
+  return getHigherRole(userRoles);
+}
+
 export const languages = {
   ES: 'Español',
   EN: 'English'
 }
-
 
 export const analysisTypes = [
   'GENERAL_LARVAE_ANALYSIS'
