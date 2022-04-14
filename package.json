@@ -11,10 +11,6 @@
     "build": "tsc",
     "prepare": "npm run build"
   },
-  "dependencies": {
-    "jsonwebtoken": "^8.5.1"
-  },
-  "devDependencies": {
-    "@types/jsonwebtoken": "^8.5.8"
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
