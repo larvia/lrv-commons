@@ -14,8 +14,7 @@ export const roles = {
 
 export function getHigherRole(userRoles: Array<String>) {
   const rolesScore = {
-    [roles.SUPER_ADMIN]: 11,
-    [roles.TECHNICAL_SUPPORT]: 10,
+    [roles.SUPER_ADMIN]: 10,
     [roles.SALES_MANAGER]: 9, 
     [roles.SALES]: 8,
     [roles.PROMOTER]: 7,
