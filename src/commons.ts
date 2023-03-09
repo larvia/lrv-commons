@@ -1,6 +1,7 @@
 export const roles = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   SALES: 'SALES',
+  SALES_MANAGER: 'SALES_MANAGER',
   PROMOTER: 'PROMOTER',
   BUSINESS_MANAGER: 'BUSINESS_MANAGER',
   CLIENT_OWNER: 'CLIENT_OWNER',
@@ -8,11 +9,13 @@ export const roles = {
   CLIENT_OPERATOR: 'CLIENT_OPERATOR',
   FINANCE: 'FINANCE',
   TRADING: 'TRADING',
+  TECHNICAL_SUPPORT: 'TECHNICAL_SUPPORT',
 };
 
 export function getHigherRole(userRoles: Array<String>) {
   const rolesScore = {
-    [roles.SUPER_ADMIN]: 9,
+    [roles.SUPER_ADMIN]: 10,
+    [roles.SALES_MANAGER]: 9, 
     [roles.SALES]: 8,
     [roles.PROMOTER]: 7,
     [roles.BUSINESS_MANAGER]: 6,
