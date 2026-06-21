@@ -1,0 +1,66 @@
+# Encola un mensaje en SQS cuando se abre un PR, para que el worker lrv-pr-reviewer
+# lo revise. COPIA este archivo en .github/workflows/ de cada repo que quieras revisar.
+#
+# No hace checkout ni ejecuta codigo del PR: solo lee metadatos del evento y llama a
+# `aws sqs send-message`. Por eso es seguro incluso para PRs (los nombres de rama, que
+# son atacable-controlados, se pasan por env + jq --arg, nunca interpolados en el shell).
+name: Encolar review de PR
+
+on:
+  pull_request:
+    # "cuando se cree un PR". Anade reopened/synchronize/ready_for_review si quieres
+    # re-review al reabrir o al empujar commits nuevos.
+    types: [opened]
+
+# Permisos minimos: id-token para asumir el rol AWS via OIDC; nada de escritura al repo.
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  enqueue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configurar credenciales AWS (OIDC, sin llaves de larga duracion)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_SQS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Enviar mensaje a la cola
+        env:
+          SQS_QUEUE_URL: ${{ secrets.SQS_QUEUE_URL }}
+          # Metadatos del PR a traves de env (evita inyeccion en el shell).
+          BRANCH: ${{ github.event.pull_request.head.ref }}
+          TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO_FULL_NAME: ${{ github.event.repository.full_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          CLONE_URL: ${{ github.event.repository.clone_url }}
+          REPO_ID: ${{ github.event.repository.id }}
+        run: |
+          set -euo pipefail
+
+          # Construir el body con jq (--argjson para pr_number = numero JSON; el resto strings).
+          BODY=$(jq -n \
+            --arg     branch          "$BRANCH" \
+            --arg     target_branch   "$TARGET_BRANCH" \
+            --argjson pr_number       "$PR_NUMBER" \
+            --arg     repo_full_name  "$REPO_FULL_NAME" \
+            --arg     head_sha        "$HEAD_SHA" \
+            --arg     clone_url       "$CLONE_URL" \
+            --arg     repo_id         "$REPO_ID" \
+            --arg     idempotency_key "${REPO_FULL_NAME}#${PR_NUMBER}@${HEAD_SHA}" \
+            '{branch:$branch, target_branch:$target_branch, pr_number:$pr_number,
+              repo_full_name:$repo_full_name, head_sha:$head_sha, clone_url:$clone_url,
+              repo_id:$repo_id, idempotency_key:$idempotency_key}')
+
+          # Args base; si la cola es FIFO (URL termina en .fifo) anade grupo + dedup.
+          ARGS=(--queue-url "$SQS_QUEUE_URL" --message-body "$BODY")
+          if [[ "$SQS_QUEUE_URL" == *.fifo ]]; then
+            ARGS+=(--message-group-id "${REPO_FULL_NAME}#${PR_NUMBER}")
+            ARGS+=(--message-deduplication-id "${REPO_FULL_NAME}#${PR_NUMBER}@${HEAD_SHA}")
+          fi
+
+          aws sqs send-message "${ARGS[@]}"
+          echo "Encolado review de PR #${PR_NUMBER} (${REPO_FULL_NAME}, ${HEAD_SHA})"
