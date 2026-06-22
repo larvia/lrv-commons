@@ -11,6 +11,13 @@ on:
     # "cuando se cree un PR". Anade reopened/synchronize/ready_for_review si quieres
     # re-review al reabrir o al empujar commits nuevos.
     types: [opened]
+    # Solo PRs cuya rama DESTINO (base) NO sea main ni staging. branches-ignore filtra
+    # la rama base (a donde mergeas), no la de origen. Acepta globs, p.ej. "release/**".
+    # OJO: el workflow solo dispara si este .yml existe en esa rama base; las ramas
+    # creadas desde main despues de anadirlo lo heredan, las anteriores no.
+    branches-ignore:
+      - main
+      - staging
 
 # Permisos minimos: id-token para asumir el rol AWS via OIDC; nada de escritura al repo.
 permissions:
