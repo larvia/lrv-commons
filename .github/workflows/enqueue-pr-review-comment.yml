@@ -1,0 +1,99 @@
+# Re-lanza el review de un PR cuando alguien comenta exactamente "review".
+# Companion de enqueue-pr-review.yml (que dispara en pull_request.opened): este encola
+# un mensaje a SQS marcado con force:true para que el worker re-revise el PR aunque ya
+# haya revisado ese mismo commit.
+#
+# IMPORTANTE (limitacion de GitHub): los workflows de issue_comment SIEMPRE corren la
+# version de este .yml que esta en la RAMA POR DEFECTO del repo (p. ej. main), no la del
+# PR ni la de dev. Debe vivir en esa rama para que dispare. Esto define SOLO desde donde
+# se LEE el archivo: NO limita que PRs se re-revisan (un comentario en un PR basado en dev
+# igual lo dispara). Por coherencia con enqueue-pr-review.yml, abajo se omiten los PRs
+# cuya rama base sea main/staging.
+#
+# No hace checkout ni ejecuta codigo del PR: solo lee metadatos (via API) y llama a
+# `aws sqs send-message`. Los nombres de rama (atacable-controlados) se pasan por env +
+# jq --arg, nunca interpolados en el shell.
+name: Relanzar review de PR por comentario
+
+on:
+  issue_comment:
+    types: [created]
+
+# Permisos minimos: id-token para asumir el rol AWS via OIDC; pull-requests:read para
+# leer los metadatos del PR con `gh api`. Nada de escritura al repo.
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: read
+
+jobs:
+  enqueue:
+    runs-on: ubuntu-latest
+    # Dispara SOLO si: (1) el comentario es en un PR (no en un issue normal),
+    # (2) el autor tiene acceso al repo (evita reviews de pago disparadas por externos/bots),
+    # (3) el cuerpo es EXACTAMENTE "review". Para aceptar variantes (mayusculas, "/review",
+    # espacios) relaja esta condicion o mueve el chequeo a un step con normalizacion.
+    if: >-
+      github.event.issue.pull_request &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      github.event.comment.body == 'review'
+    steps:
+      - name: Configurar credenciales AWS (OIDC, sin llaves de larga duracion)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_SQS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Leer metadatos del PR y enviar mensaje a la cola
+        env:
+          # Token para `gh api` (lee el PR: head/base ref y head sha, que el evento no trae).
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SQS_QUEUE_URL: ${{ secrets.SQS_QUEUE_URL }}
+          REPO_FULL_NAME: ${{ github.event.repository.full_name }}
+          CLONE_URL: ${{ github.event.repository.clone_url }}
+          REPO_ID: ${{ github.event.repository.id }}
+          # En issue_comment, issue.number ES el numero del PR.
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+        run: |
+          set -euo pipefail
+
+          # issue_comment NO trae head.sha/head.ref/base.ref: se leen del PR via API.
+          PR_JSON=$(gh api "repos/${REPO_FULL_NAME}/pulls/${PR_NUMBER}")
+          BRANCH=$(jq -r '.head.ref' <<<"$PR_JSON")
+          TARGET_BRANCH=$(jq -r '.base.ref' <<<"$PR_JSON")
+          HEAD_SHA=$(jq -r '.head.sha' <<<"$PR_JSON")
+
+          # Coherencia con enqueue-pr-review.yml (branches-ignore: main/staging): no
+          # re-revisar PRs cuya rama base sea main ni staging. Ajusta esta lista si cambia.
+          if [[ "$TARGET_BRANCH" == "main" || "$TARGET_BRANCH" == "staging" ]]; then
+            echo "PR #${PR_NUMBER} apunta a ${TARGET_BRANCH}: no se re-revisa."
+            exit 0
+          fi
+
+          # Construir el body con jq (--argjson para pr_number/force = JSON; el resto strings).
+          BODY=$(jq -n \
+            --arg     branch          "$BRANCH" \
+            --arg     target_branch   "$TARGET_BRANCH" \
+            --argjson pr_number       "$PR_NUMBER" \
+            --arg     repo_full_name  "$REPO_FULL_NAME" \
+            --arg     head_sha        "$HEAD_SHA" \
+            --arg     clone_url       "$CLONE_URL" \
+            --arg     repo_id         "$REPO_ID" \
+            --argjson force           true \
+            --arg     idempotency_key "${REPO_FULL_NAME}#${PR_NUMBER}@${HEAD_SHA}#c${COMMENT_ID}" \
+            '{branch:$branch, target_branch:$target_branch, pr_number:$pr_number,
+              repo_full_name:$repo_full_name, head_sha:$head_sha, clone_url:$clone_url,
+              repo_id:$repo_id, force:$force, idempotency_key:$idempotency_key}')
+
+          # Args base; si la cola es FIFO (URL termina en .fifo) anade grupo + dedup.
+          ARGS=(--queue-url "$SQS_QUEUE_URL" --message-body "$BODY")
+          if [[ "$SQS_QUEUE_URL" == *.fifo ]]; then
+            ARGS+=(--message-group-id "${REPO_FULL_NAME}#${PR_NUMBER}")
+            # El dedup-id incluye el id del comentario: asi un re-review sobre el MISMO
+            # head_sha no se descarta por la deduplicacion de SQS FIFO (ventana de 5 min).
+            ARGS+=(--message-deduplication-id "${REPO_FULL_NAME}#${PR_NUMBER}@${HEAD_SHA}#c${COMMENT_ID}")
+          fi
+
+          aws sqs send-message "${ARGS[@]}"
+          echo "Encolado RE-review (force) de PR #${PR_NUMBER} (${REPO_FULL_NAME}, ${HEAD_SHA})"
