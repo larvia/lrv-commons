@@ -7,13 +7,16 @@
     "outDir": "dist",
     "rootDir": "src",
     "moduleResolution": "NodeNext",
-    "sourceMap": true
+    "sourceMap": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
   "include": [
     "src"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/**/*.spec.ts"
   ]
 }
