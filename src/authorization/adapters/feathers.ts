@@ -5,7 +5,9 @@ import { AccessTokenPayload, PermissionKey } from '../types';
 export interface AuthorizableHookContext {
   params: {
     provider?: string;
-    authentication?: { payload?: Partial<AccessTokenPayload> };
+    // What `authenticate('jwt')` leaves. Keep `strategy`: Feathers 4 types `params.authentication` as
+    // `{ strategy?: string; [key: string]: any }`, and without a field in common its contexts do not compile.
+    authentication?: { strategy?: string; accessToken?: string; payload?: Partial<AccessTokenPayload> };
   };
 }
 
