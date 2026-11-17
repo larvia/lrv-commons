@@ -18,6 +18,25 @@ import { authorize, assertPermission, resolveCompanyScope } from 'lrv-commons';
 const companyId = resolveCompanyScope(payload, query.companyId); // another company only with companies:access-any
 ```
 
+Added in 1.2.0, all optional:
+
+```ts
+// Express, one of several permissions is enough:
+app.get('/route', authenticate('jwt'), requireAnyPermission('historical-company-balances:find', 'payments:create'), handler);
+
+// Other permissions that open any company, and companies the service resolved itself (no I/O here).
+const options = { anyCompanyPermissions: [ACCESS_ANY_COMPANY_PERMISSION, MANAGE_ANY_COMPANY_PERMISSION], allowedCompanyIds };
+resolveCompanyScope(payload, query.companyId, options);
+resolveCompanyFilter(payload, options); // { companyId }, { companyId: { $in } } or {}
+resolveCompanyIds(payload, options); // the same companies as a list, or undefined for any company (no filter)
+
+// JWT strategy, after Feathers verified the signature:
+classifyAccessToken({ header, payload }); // { kind: 'user' | 'integration' } or { kind: 'invalid', reason }
+isTokenOutdated(payload, membership?.version); // true: throw new TokenRejectedError(TOKEN_OUTDATED_REASON), a 401
+```
+
+`STAFF_ROLE_KEYS` and `CLIENT_VISIBLE_ROLE_KEYS` are the role template lists of lrv-auth-service.
+
 Install it pinned to a tag or commit, not to the default branch.
 
 # README #

@@ -37,14 +37,14 @@ export const hasPermission = (permissions: PermissionsMap | null | undefined, ke
   return getGrantedActions(permissions, modelName).includes(normalize(action));
 };
 
-export const hasAnyPermission = (permissions: PermissionsMap | null | undefined, keys: PermissionKey[]): boolean =>
+export const hasAnyPermission = (permissions: PermissionsMap | null | undefined, keys: readonly PermissionKey[]): boolean =>
   keys.some((key) => hasPermission(permissions, key));
 
-export const hasAllPermissions = (permissions: PermissionsMap | null | undefined, keys: PermissionKey[]): boolean =>
+export const hasAllPermissions = (permissions: PermissionsMap | null | undefined, keys: readonly PermissionKey[]): boolean =>
   keys.every((key) => hasPermission(permissions, key));
 
 /** Throws a 403 unless every key is granted. */
-export const assertPermissions = (permissions: PermissionsMap | null | undefined, keys: PermissionKey[]) => {
+export const assertPermissions = (permissions: PermissionsMap | null | undefined, keys: readonly PermissionKey[]) => {
   const missing = keys.find((key) => !hasPermission(permissions, key));
 
   if (missing) {
@@ -56,8 +56,9 @@ export const assertPermission = (permissions: PermissionsMap | null | undefined,
   assertPermissions(permissions, [key]);
 
 /** Throws a 403 unless at least one key is granted. */
-export const assertAnyPermission = (permissions: PermissionsMap | null | undefined, keys: PermissionKey[]) => {
+export const assertAnyPermission = (permissions: PermissionsMap | null | undefined, keys: readonly PermissionKey[]) => {
   if (!hasAnyPermission(permissions, keys)) {
-    throw new PermissionDeniedError(undefined, { anyOf: keys });
+    // A copy: changing the error must not change the keys a hook checks.
+    throw new PermissionDeniedError(undefined, { anyOf: [...keys] });
   }
 };
