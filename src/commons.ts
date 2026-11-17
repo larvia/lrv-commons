@@ -26,7 +26,8 @@ export function getHigherRole (userRoles: Array<String>) {
     [roles.FINANCE]: 2,
     [roles.TRADING]: 1,
   };
-  const scores = userRoles.map((r: any) => rolesScore[r]);
+  // Roles missing from rolesScore, such as a retired one still carried by an old token, are ignored.
+  const scores = userRoles.map((r: any) => rolesScore[r]).filter((score): score is number => score !== undefined);
   const higherRoleScore = Math.max(...scores);
   const higherRoleIndex = Object.values(rolesScore).indexOf(higherRoleScore);
   return Object.keys(rolesScore)[higherRoleIndex];
