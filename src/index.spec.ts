@@ -20,6 +20,11 @@ describe('root entry', () => {
     'requireAnyPermission', 'MANAGE_ANY_COMPANY_PERMISSION', 'classifyAccessToken', 'DEFAULT_ACCESS_TOKEN_RULES',
     'ACCESS_TOKEN_REJECTION_REASONS', 'isTokenOutdated', 'DEFAULT_MEMBERSHIP_VERSION', 'TOKEN_OUTDATED_REASON',
     'STAFF_ROLE_KEYS', 'CLIENT_VISIBLE_ROLE_KEYS', 'resolveCompanyIds', 'TokenRejectedError',
+    // 1.3.0
+    'policy', 'defineServicePolicies', 'describePolicy', 'SERVICE_METHODS', 'createServicePolicyHook', 'createSecureRoute',
+    'listRoutePolicies', 'ROUTE_POLICY', 'withAccessTokenChecks', 'findTokenRejectionReason', 'decodeAccessToken',
+    'describeRejectedToken', 'parseTokenCheckMode', 'noMembershipVersion', 'isSameUser', 'isServiceSecret',
+    'NotAuthenticatedError', 'MethodNotAllowedError', 'isFeathersLikeError',
   ];
 
   it.each(previousExports)('keeps exporting %s', (name) => {
