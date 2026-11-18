@@ -37,6 +37,41 @@ isTokenOutdated(payload, membership?.version); // true: throw new TokenRejectedE
 
 `STAFF_ROLE_KEYS` and `CLIENT_VISIBLE_ROLE_KEYS` are the role template lists of lrv-auth-service.
 
+Added in 1.3.0: declared policies and deny-by-default. Feathers and Express stay out of the dependencies: each
+service passes its own `authenticate('jwt')` and `JWTStrategy`.
+
+```ts
+// Every Feathers method declares its policy; an undeclared method answers 405, an unregistered service 403.
+const policies = defineServicePolicies({
+  payments: { find: policy.permissions({ all: ['payments:find'] }) },
+  users: { get: policy.permissions({ all: ['users:get'] }, { self: { from: 'id' } }) }, // the own record needs no key
+  'header-settings': {}, // closed to external calls
+});
+app.hooks({ before: { all: [createServicePolicyHook({ policies, authenticate: authentication.hooks.authenticate('jwt') })] } });
+
+// Every Express route goes through secureRoute, so it cannot exist without a policy.
+const { secureRoute } = createSecureRoute({ authenticate: authenticate('jwt'), getServiceSecret: () => process.env.AUTHENTICATION_SECRET_SERVICE });
+secureRoute(app, 'post', '/payments/upload', policy.permissions({ all: ['payments:upload'] }), uploadPayments);
+secureRoute(app, 'get', '/users/:userId/balance', policy.self({ from: 'param', param: 'userId' }, { serviceSecret: true }), getBalance);
+listRoutePolicies(app, Object.keys(app.services)); // coverage test: a route without policy skipped secureRoute (the
+// /<path> and /<path>/:__feathersId routes of each service are left out; pass any id-less custom method route too)
+
+// The 'jwt' strategy with the token checks: 'log' (default) only logs, 'enforce' answers 401.
+const AccessTokenStrategy = withAccessTokenChecks(JWTStrategy, { mode: parseTokenCheckMode(process.env.ACCESS_TOKEN_CHECK_MODE), logger });
+authentication.register('jwt', new AccessTokenStrategy());
+```
+
+Policies: `public(reason)`, `authenticated()`, `self(target)`, `permissions({ all | any }, { self })`, `apiKey()`
+and `serviceSecret()`. A Feathers `self` reads `id` (get, update, patch, remove), a `query` or a `data` field; an
+Express one, a route `param` the path declares, or the `token` (a token without `sub` is never self). Only Express
+routes accept the service secret. `defineServicePolicies` and `secureRoute` throw at boot for a rule they cannot apply.
+`isServiceSecret` compares in constant time.
+
+The errors of this package have the shape of Feathers errors (`type: 'FeathersError'`), but they are not
+`instanceof FeathersError`. Feathers answers them with the right status. A middleware that tells handled errors
+apart, such as a Rollbar middleware that skips Feathers errors, must use `isFeathersLikeError(err)`; otherwise it
+reports every 401, 403 and 405 of the policies, with the token of the request.
+
 Install it pinned to a tag or commit, not to the default branch.
 
 # README #
