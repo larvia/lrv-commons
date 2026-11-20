@@ -1,6 +1,6 @@
 {
   "name": "lrv-commons",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Common functions for the LARVIA API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

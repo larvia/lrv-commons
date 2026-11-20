@@ -72,6 +72,9 @@ The errors of this package have the shape of Feathers errors (`type: 'FeathersEr
 apart, such as a Rollbar middleware that skips Feathers errors, must use `isFeathersLikeError(err)`; otherwise it
 reports every 401, 403 and 405 of the policies, with the token of the request.
 
+1.4.0 removes the retired `roles.TECHNICAL_SUPPORT`: `getHigherRole` ignores it in an old token, and it is no
+longer in `STAFF_ROLE_KEYS`.
+
 Install it pinned to a tag or commit, not to the default branch.
 
 # README #

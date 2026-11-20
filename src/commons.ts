@@ -9,14 +9,12 @@ export const roles = {
   PARAMETERIST: 'PARAMETERIST',
   FINANCE: 'FINANCE',
   TRADING: 'TRADING',
-  TECHNICAL_SUPPORT: 'TECHNICAL_SUPPORT',
 };
 
 export function getHigherRole (userRoles: Array<String>) {
   const rolesScore = {
     [roles.SUPER_ADMIN]: 13,
     [roles.PARTIAL_ADMIN]: 12,
-    [roles.TECHNICAL_SUPPORT]: 11,
     [roles.SALES_MANAGER]: 10,
     [roles.SALES]: 9,
     [roles.CLIENT_OWNER]: 6,
