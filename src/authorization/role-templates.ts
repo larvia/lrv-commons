@@ -4,7 +4,7 @@ import { roles } from '../commons';
 
 /** Role templates of the LarvIA team. A legacy membership (built from the user) with one of them is internal. */
 export const STAFF_ROLE_KEYS: readonly string[] = Object.freeze([
-  roles.SUPER_ADMIN, roles.PARTIAL_ADMIN, roles.TECHNICAL_SUPPORT, roles.SALES_MANAGER, roles.SALES, roles.FINANCE, roles.TRADING,
+  roles.SUPER_ADMIN, roles.PARTIAL_ADMIN, roles.SALES_MANAGER, roles.SALES, roles.FINANCE, roles.TRADING,
 ]);
 
 /** Templates company admins can assign to their users (`visibleToClients`). The owner template is not one of them. */

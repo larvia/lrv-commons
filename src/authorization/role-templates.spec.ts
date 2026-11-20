@@ -10,7 +10,7 @@ import { CLIENT_VISIBLE_ROLE_KEYS, STAFF_ROLE_KEYS } from './role-templates';
 // A change there has to be made here too, and the other way around.
 describe('role template lists', () => {
   it('lists the templates of the LarvIA team in the order of lrv-auth-service', () => {
-    expect(STAFF_ROLE_KEYS).toEqual(['SUPER_ADMIN', 'PARTIAL_ADMIN', 'TECHNICAL_SUPPORT', 'SALES_MANAGER', 'SALES', 'FINANCE', 'TRADING']);
+    expect(STAFF_ROLE_KEYS).toEqual(['SUPER_ADMIN', 'PARTIAL_ADMIN', 'SALES_MANAGER', 'SALES', 'FINANCE', 'TRADING']);
   });
 
   it('lists the templates company admins can assign (visibleToClients)', () => {
